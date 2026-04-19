@@ -184,7 +184,7 @@ type objTableEntry struct {
 
 // ---- Unarchiver ----
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mock/mock_unarchiver.go -package=mock github.com/tagatac/typedstream-go Unarchiver
+//go:generate go run go.uber.org/mock/mockgen -destination=mock_typedstream/mock_unarchiver.go -package=mock_typedstream github.com/tagatac/typedstream-go Unarchiver
 
 // Unarchiver decodes high-level objects from a TypedStreamReader.
 type Unarchiver interface {
