@@ -29,7 +29,7 @@
 ├── encodings_test.go
 ├── stream_test.go
 ├── archiving_test.go
-├── testdata/             # symlinks or copies of tests/data/ from Python repo
+├── testdata/             # copied from python-typedstream/tests/data/
 │   ├── Emacs.clr
 │   ├── Empty2D macOS 10.14.gcx
 │   └── Empty2D macOS 13.gcx
@@ -76,11 +76,28 @@ type ArchivedObject interface {
 }
 ```
 
-**Superclass chain:** Unlike Python's metaclass magic, each Go type's `InitFromUnarchiver` explicitly calls the embedded supertype's `InitFromUnarchiver` first (with `class.Superclass`), then reads its own versioned data. Mechanical but explicit.
+#### Why Python needs a metaclass here, and the cleanest Go equivalent
+
+**The Python problem:** When NSArchiver writes an `NSMutableString`, it stores class-level data for *each level of the hierarchy separately* — first NSMutableString's own data (none), then NSString's own data (the UTF-8 bytes), then NSObject's own data (nothing). The unarchiver must call each class's deserializer in the right order (root-first). Python's `_KnownArchivedClass` metaclass auto-generates `init_from_unarchiver` for each subclass at class-definition time, so:
+- Each class only defines `_init_from_unarchiver_` for its **own** data
+- The metaclass auto-generates the chain-walk and superclass-name-checking wrapper
+- This prevents accidentally inheriting the superclass's reader or forgetting to call `super`
+
+**Why Python can't just use normal inheritance:** If `NSMutableString` inherits `_init_from_unarchiver_` from `NSString`, the super-chain call would run NSString's reader twice. The metaclass detects this and raises an error, forcing every class to implement its own version.
+
+**Go alternatives considered:**
+1. **Reflection-based dispatch** — find and call methods by name at runtime. Fragile, unidiomatic, no compile-time safety.
+2. **Registered per-class closures** — `map[string]func(obj interface{}, u, version)`. Requires type assertions everywhere; more complex than just writing the method.
+3. **Code generation (`go generate`)** — overkill for ~40 types; adds build complexity.
+4. **Explicit delegation (chosen approach)** — each type's `InitFromUnarchiver` calls its embedded parent's method with `class.Superclass`, then reads its own data. This is the standard Go pattern for "call super". It is verbose but transparent: the compiler enforces the interface, the code is straightforward to read, and there is no hidden control flow.
+
+The explicit approach IS Go-idiomatic — it's the same pattern any Go developer would use for hierarchical initialization. The Python metaclass is necessary because Python lacks compile-time interface enforcement and relies on the metaclass to catch "forgot to call super" bugs at class-definition time rather than at runtime. In Go, the compiler catches these issues via the interface.
 
 ```go
 func (s *NSString) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+    // Call parent (NSObject) with its portion of the archived class chain
     if err := s.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil { return err }
+    // Read NSString's own data
     if class.Version != 1 { return fmt.Errorf("NSString: unsupported version %d", class.Version) }
     raw, err := u.DecodeValueOfType([]byte("+"))
     if err != nil { return err }
