@@ -135,7 +135,7 @@ func formatFloat32Coord(f float32) string {
 // NSObject is the root archived class.
 type NSObject struct{}
 
-func (o *NSObject) InitFromUnarchiver(_ *Unarchiver, class *Class) error {
+func (o *NSObject) InitFromUnarchiver(_ Unarchiver, class *Class) error {
 	if class.Superclass != nil {
 		return fmt.Errorf("NSObject: expected no superclass in archive, got %v", class.Superclass)
 	}
@@ -157,7 +157,7 @@ type NSData struct {
 	Data []byte
 }
 
-func (d *NSData) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (d *NSData) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if !bytes.Equal(class.Superclass.Name, []byte("NSObject")) {
 		return fmt.Errorf("NSData: unexpected superclass %v", class.Superclass)
 	}
@@ -180,7 +180,7 @@ type NSMutableData struct {
 	NSData
 }
 
-func (d *NSMutableData) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (d *NSMutableData) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if !bytes.Equal(class.Superclass.Name, []byte("NSData")) {
 		return fmt.Errorf("NSMutableData: unexpected superclass %v", class.Superclass)
 	}
@@ -202,7 +202,7 @@ type NSDate struct {
 
 var nsDateReferenceDate = time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
 
-func (d *NSDate) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (d *NSDate) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if !bytes.Equal(class.Superclass.Name, []byte("NSObject")) {
 		return fmt.Errorf("NSDate: unexpected superclass %v", class.Superclass)
 	}
@@ -235,7 +235,7 @@ type NSString struct {
 	Value string
 }
 
-func (s *NSString) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (s *NSString) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSObject")) {
 		return fmt.Errorf("NSString: unexpected superclass %v", class.Superclass)
 	}
@@ -288,7 +288,7 @@ type NSMutableString struct {
 	NSString
 }
 
-func (s *NSMutableString) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (s *NSMutableString) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSString")) {
 		return fmt.Errorf("NSMutableString: unexpected superclass %v", class.Superclass)
 	}
@@ -308,7 +308,7 @@ type NSURL struct {
 	Value      string
 }
 
-func (u2 *NSURL) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (u2 *NSURL) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSObject")) {
 		return fmt.Errorf("NSURL: unexpected superclass %v", class.Superclass)
 	}
@@ -390,7 +390,7 @@ type NSValue struct {
 	Value        interface{}
 }
 
-func (v *NSValue) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (v *NSValue) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSObject")) {
 		return fmt.Errorf("NSValue: unexpected superclass %v", class.Superclass)
 	}
@@ -419,7 +419,7 @@ type NSNumber struct {
 	NSValue
 }
 
-func (n *NSNumber) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (n *NSNumber) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSValue")) {
 		return fmt.Errorf("NSNumber: unexpected superclass %v", class.Superclass)
 	}
@@ -442,7 +442,7 @@ type NSArray struct {
 	Elements []interface{}
 }
 
-func (a *NSArray) initElements(u *Unarchiver, class *Class) error {
+func (a *NSArray) initElements(u Unarchiver, class *Class) error {
 	countRaw, err := u.DecodeValueOfType([]byte("i"))
 	if err != nil {
 		return err
@@ -461,7 +461,7 @@ func (a *NSArray) initElements(u *Unarchiver, class *Class) error {
 	return nil
 }
 
-func (a *NSArray) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (a *NSArray) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSObject")) {
 		return fmt.Errorf("NSArray: unexpected superclass %v", class.Superclass)
 	}
@@ -487,7 +487,7 @@ type NSMutableArray struct {
 	NSArray
 }
 
-func (a *NSMutableArray) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (a *NSMutableArray) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSArray")) {
 		return fmt.Errorf("NSMutableArray: unexpected superclass %v", class.Superclass)
 	}
@@ -506,7 +506,7 @@ type NSSet struct {
 	Elements []interface{}
 }
 
-func (s *NSSet) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (s *NSSet) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSObject")) {
 		return fmt.Errorf("NSSet: unexpected superclass %v", class.Superclass)
 	}
@@ -544,7 +544,7 @@ type NSMutableSet struct {
 	NSSet
 }
 
-func (s *NSMutableSet) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (s *NSMutableSet) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSSet")) {
 		return fmt.Errorf("NSMutableSet: unexpected superclass %v", class.Superclass)
 	}
@@ -568,7 +568,7 @@ type NSDictionary struct {
 	Contents []KeyValue
 }
 
-func (d *NSDictionary) initContents(u *Unarchiver) error {
+func (d *NSDictionary) initContents(u Unarchiver) error {
 	countRaw, err := u.DecodeValueOfType([]byte("i"))
 	if err != nil {
 		return err
@@ -592,7 +592,7 @@ func (d *NSDictionary) initContents(u *Unarchiver) error {
 	return nil
 }
 
-func (d *NSDictionary) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (d *NSDictionary) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSObject")) {
 		return fmt.Errorf("NSDictionary: unexpected superclass %v", class.Superclass)
 	}
@@ -653,7 +653,7 @@ type NSMutableDictionary struct {
 	NSDictionary
 }
 
-func (d *NSMutableDictionary) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (d *NSMutableDictionary) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if class.Superclass == nil || !bytes.Equal(class.Superclass.Name, []byte("NSDictionary")) {
 		return fmt.Errorf("NSMutableDictionary: unexpected superclass %v", class.Superclass)
 	}

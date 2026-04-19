@@ -81,7 +81,7 @@ var windingRuleNames = map[int64]string{0: "non_zero", 1: "even_odd"}
 var lineCapNames = map[int64]string{0: "butt", 1: "round", 2: "square"}
 var lineJoinNames = map[int64]string{0: "miter", 1: "round", 2: "bevel"}
 
-func (b *NSBezierPath) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (b *NSBezierPath) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := b.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ type NSClassSwapper struct {
 	Template      ArchivedObject
 }
 
-func (c *NSClassSwapper) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSClassSwapper) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -306,7 +306,7 @@ type NSColor struct {
 	Value interface{} // NSColorRGBAValue | NSColorWAValue | NSColorCMYKAValue | NSColorNamedValue
 }
 
-func (c *NSColor) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSColor) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -382,7 +382,7 @@ type NSCustomObject struct {
 	Object    interface{}
 }
 
-func (c *NSCustomObject) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSCustomObject) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -419,7 +419,7 @@ type NSCustomResource struct {
 	ResourceName string
 }
 
-func (c *NSCustomResource) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSCustomResource) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -454,7 +454,7 @@ type NSFont struct {
 	Flags [4]int64
 }
 
-func (f *NSFont) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (f *NSFont) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := f.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -524,7 +524,7 @@ type NSIBObjectData struct {
 	TargetFramework string
 }
 
-func (d *NSIBObjectData) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (d *NSIBObjectData) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := d.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -803,7 +803,7 @@ type NSIBHelpConnector struct {
 	Value  string
 }
 
-func (c *NSIBHelpConnector) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSIBHelpConnector) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -843,7 +843,7 @@ type NSNibConnector struct {
 	Label       string
 }
 
-func (c *NSNibConnector) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSNibConnector) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -879,7 +879,7 @@ type NSNibControlConnector struct {
 	NSNibConnector
 }
 
-func (c *NSNibControlConnector) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSNibControlConnector) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSNibConnector.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -901,7 +901,7 @@ type NSNibOutletConnector struct {
 	NSNibConnector
 }
 
-func (c *NSNibOutletConnector) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSNibOutletConnector) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSNibConnector.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -970,7 +970,7 @@ func formatModifierFlags(flags int64) string {
 
 var controlStateNames = map[int64]string{-1: "mixed", 0: "off", 1: "on"}
 
-func (m *NSMenuItem) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (m *NSMenuItem) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := m.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1080,7 +1080,7 @@ type NSMenu struct {
 	HasIdent   bool
 }
 
-func (m *NSMenu) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (m *NSMenu) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := m.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1143,7 +1143,7 @@ type NSCell struct {
 	Font         interface{}
 }
 
-func (c *NSCell) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSCell) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1196,7 +1196,7 @@ var imageFrameStyleNames = map[int64]string{
 	0: "none", 1: "photo", 2: "gray_bezel", 3: "groove", 4: "button",
 }
 
-func (c *NSImageCell) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSImageCell) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSCell.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1241,7 +1241,7 @@ type NSActionCell struct {
 	ControlView interface{}
 }
 
-func (c *NSActionCell) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSActionCell) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSCell.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1298,7 +1298,7 @@ type NSButtonImageSource struct {
 	ResourceName string
 }
 
-func (b *NSButtonImageSource) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (b *NSButtonImageSource) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := b.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1341,7 +1341,7 @@ var buttonTypeNames = map[int64]string{
 	7: "momentary_push_in", 8: "accelerator", 9: "multi_level_accelerator",
 }
 
-func (b *NSButtonCell) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (b *NSButtonCell) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := b.NSActionCell.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1402,7 +1402,7 @@ type NSTextFieldCell struct {
 	TextColor       interface{}
 }
 
-func (c *NSTextFieldCell) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSTextFieldCell) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSActionCell.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1450,7 +1450,7 @@ type NSComboBoxCell struct {
 	TableView            interface{}
 }
 
-func (c *NSComboBoxCell) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSComboBoxCell) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSTextFieldCell.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1518,7 +1518,7 @@ type NSTableHeaderCell struct {
 	NSTextFieldCell
 }
 
-func (c *NSTableHeaderCell) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSTableHeaderCell) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSTextFieldCell.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1543,7 +1543,7 @@ type NSResponder struct {
 	NextResponder interface{}
 }
 
-func (r *NSResponder) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (r *NSResponder) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := r.NSObject.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1577,7 +1577,7 @@ type NSView struct {
 	ContentView            interface{}
 }
 
-func (v *NSView) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (v *NSView) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := v.NSResponder.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -1693,7 +1693,7 @@ type NSControl struct {
 	Cell  interface{}
 }
 
-func (c *NSControl) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (c *NSControl) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := c.NSView.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}

@@ -13,7 +13,7 @@ func init() {
 // Object is the root NeXTSTEP archived class.
 type Object struct{}
 
-func (o *Object) InitFromUnarchiver(_ *Unarchiver, class *Class) error {
+func (o *Object) InitFromUnarchiver(_ Unarchiver, class *Class) error {
 	if class == nil {
 		return nil
 	}
@@ -32,7 +32,7 @@ type List struct {
 	Elements []interface{}
 }
 
-func (l *List) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (l *List) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := l.Object.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ type HashTable struct {
 	Contents          []HashTableEntry
 }
 
-func (h *HashTable) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (h *HashTable) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := h.Object.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ type StreamTable struct {
 	UnarchivedContents []HashTableEntry
 }
 
-func (s *StreamTable) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (s *StreamTable) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := s.HashTable.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ type Storage struct {
 	Elements            []interface{}
 }
 
-func (s *Storage) InitFromUnarchiver(u *Unarchiver, class *Class) error {
+func (s *Storage) InitFromUnarchiver(u Unarchiver, class *Class) error {
 	if err := s.Object.InitFromUnarchiver(u, class.Superclass); err != nil {
 		return err
 	}

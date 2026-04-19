@@ -195,7 +195,7 @@ func pyFloat32Str(f float32) string {
 	return s
 }
 
-func openUnarchiver(file string) (*ts.Unarchiver, error) {
+func openUnarchiver(file string) (ts.Unarchiver, error) {
 	if file == "-" {
 		return ts.OpenUnarchiverFromReader(os.Stdin)
 	}

@@ -11,7 +11,7 @@ import (
 // Each concrete type's InitFromUnarchiver must call its embedded parent's
 // InitFromUnarchiver first (with class.Superclass), then read its own data.
 type ArchivedObject interface {
-	InitFromUnarchiver(u *Unarchiver, class *Class) error
+	InitFromUnarchiver(u Unarchiver, class *Class) error
 	AllowsExtraData() bool
 	AddExtraField(field *TypedGroup) error
 	FormatLines(seen map[uintptr]bool) []string
@@ -131,7 +131,7 @@ type GenericArchivedObject struct {
 	Contents    []*TypedGroup
 }
 
-func (g *GenericArchivedObject) InitFromUnarchiver(_ *Unarchiver, _ *Class) error { return nil }
+func (g *GenericArchivedObject) InitFromUnarchiver(_ Unarchiver, _ *Class) error { return nil }
 func (g *GenericArchivedObject) AllowsExtraData() bool                           { return true }
 func (g *GenericArchivedObject) AddExtraField(f *TypedGroup) error {
 	g.Contents = append(g.Contents, f)
@@ -184,38 +184,54 @@ type objTableEntry struct {
 
 // ---- Unarchiver ----
 
+//go:generate go run go.uber.org/mock/mockgen -destination=mock/mock_unarchiver.go -package=mock github.com/tagatac/typedstream-go Unarchiver
+
 // Unarchiver decodes high-level objects from a TypedStreamReader.
-type Unarchiver struct {
-	Reader           *TypedStreamReader
-	closeReader      bool
+type Unarchiver interface {
+	Close() error
+	DecodeAnyValue(expectedEncoding []byte) (interface{}, error)
+	DecodeTypedValues() (*TypedGroup, error)
+	DecodeValuesOfTypes(typeEncodings ...[]byte) ([]interface{}, error)
+	DecodeValueOfType(typeEncoding []byte) (interface{}, error)
+	DecodeArray(elemType []byte, length int) (*Array, error)
+	DecodeDataObject() ([]byte, error)
+	DecodePropertyList() (interface{}, error)
+	DecodeAll() ([]*TypedGroup, error)
+	DecodeSingleRoot() (interface{}, error)
+}
+
+// unarchiver is the concrete implementation of Unarchiver.
+type unarchiver struct {
+	Reader            *TypedStreamReader
+	closeReader       bool
 	sharedObjectTable []objTableEntry
 }
 
 // NewUnarchiverFromData creates an Unarchiver from raw typedstream bytes.
-func NewUnarchiverFromData(data []byte) (*Unarchiver, error) {
+func NewUnarchiverFromData(data []byte) (Unarchiver, error) {
 	r, err := NewReaderFromData(data)
 	if err != nil {
 		return nil, err
 	}
-	return &Unarchiver{Reader: r, closeReader: true}, nil
+	return &unarchiver{Reader: r, closeReader: true}, nil
 }
 
 // OpenUnarchiver opens a typedstream file for unarchiving.
-func OpenUnarchiver(filename string) (*Unarchiver, error) {
+func OpenUnarchiver(filename string) (Unarchiver, error) {
 	r, err := OpenReader(filename)
 	if err != nil {
 		return nil, err
 	}
-	return &Unarchiver{Reader: r, closeReader: true}, nil
+	return &unarchiver{Reader: r, closeReader: true}, nil
 }
 
 // NewUnarchiver creates an Unarchiver from an existing reader.
-func NewUnarchiver(r *TypedStreamReader) *Unarchiver {
-	return &Unarchiver{Reader: r}
+func NewUnarchiver(r *TypedStreamReader) Unarchiver {
+	return &unarchiver{Reader: r}
 }
 
 // Close closes the Unarchiver (and its underlying reader if owned).
-func (u *Unarchiver) Close() error {
+func (u *unarchiver) Close() error {
 	if u.closeReader {
 		return u.Reader.Close()
 	}
@@ -223,16 +239,16 @@ func (u *Unarchiver) Close() error {
 }
 
 // OpenUnarchiverFromReader creates an Unarchiver from an io.Reader.
-func OpenUnarchiverFromReader(r io.Reader) (*Unarchiver, error) {
+func OpenUnarchiverFromReader(r io.Reader) (Unarchiver, error) {
 	tr, err := NewReader(r)
 	if err != nil {
 		return nil, err
 	}
-	return &Unarchiver{Reader: tr, closeReader: true}, nil
+	return &unarchiver{Reader: tr, closeReader: true}, nil
 }
 
 // OpenUnarchiverFromFile opens a file for unarchiving (convenience wrapper).
-func OpenUnarchiverFromFile(filename string) (*Unarchiver, error) {
+func OpenUnarchiverFromFile(filename string) (Unarchiver, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -244,10 +260,10 @@ func OpenUnarchiverFromFile(filename string) (*Unarchiver, error) {
 	}
 	tr.closeStream = true
 	tr.r = f
-	return &Unarchiver{Reader: tr, closeReader: true}, nil
+	return &unarchiver{Reader: tr, closeReader: true}, nil
 }
 
-func (u *Unarchiver) lookupReference(ref ObjectReference) (interface{}, error) {
+func (u *unarchiver) lookupReference(ref ObjectReference) (interface{}, error) {
 	if ref.Number < 0 || ref.Number >= len(u.sharedObjectTable) {
 		return nil, fmt.Errorf("reference #%d out of range (table size %d)", ref.Number, len(u.sharedObjectTable))
 	}
@@ -259,7 +275,7 @@ func (u *Unarchiver) lookupReference(ref ObjectReference) (interface{}, error) {
 }
 
 // DecodeAnyValue decodes the next value from the stream using expectedEncoding as a hint.
-func (u *Unarchiver) DecodeAnyValue(expectedEncoding []byte) (interface{}, error) {
+func (u *unarchiver) DecodeAnyValue(expectedEncoding []byte) (interface{}, error) {
 	ev, err := u.Reader.Next()
 	if err != nil {
 		return nil, err
@@ -327,7 +343,7 @@ func (u *Unarchiver) DecodeAnyValue(expectedEncoding []byte) (interface{}, error
 	}
 }
 
-func (u *Unarchiver) readClassChain(first SingleClass) (*Class, error) {
+func (u *unarchiver) readClassChain(first SingleClass) (*Class, error) {
 	singles := []SingleClass{first}
 	for {
 		ev, err := u.Reader.Next()
@@ -357,7 +373,7 @@ func (u *Unarchiver) readClassChain(first SingleClass) (*Class, error) {
 
 // buildClassChain constructs Class objects from a list of SingleClass events.
 // singles are in stream order (subclass first). tail is the already-resolved superclass.
-func (u *Unarchiver) buildClassChain(singles []SingleClass, tail *Class) (*Class, error) {
+func (u *unarchiver) buildClassChain(singles []SingleClass, tail *Class) (*Class, error) {
 	// Build in reverse (tail = root), then assign reference numbers in forward order.
 	newClasses := make([]*Class, len(singles))
 	next := tail
@@ -374,7 +390,7 @@ func (u *Unarchiver) buildClassChain(singles []SingleClass, tail *Class) (*Class
 	return newClasses[0], nil
 }
 
-func (u *Unarchiver) readObject() (interface{}, error) {
+func (u *unarchiver) readObject() (interface{}, error) {
 	// Reserve a slot in the table before reading the class (self-referential archives).
 	placeholderIdx := len(u.sharedObjectTable)
 	u.sharedObjectTable = append(u.sharedObjectTable, objTableEntry{ObjRefTypeObject, nil})
@@ -434,7 +450,7 @@ func (u *Unarchiver) readObject() (interface{}, error) {
 	return obj, nil
 }
 
-func (u *Unarchiver) readStruct(begin BeginStruct, expectedEncoding []byte) (interface{}, error) {
+func (u *unarchiver) readStruct(begin BeginStruct, expectedEncoding []byte) (interface{}, error) {
 	factory := structFactoriesByEncoding[string(expectedEncoding)]
 	_, expectedFieldEncs, _ := parseStructEncoding(expectedEncoding)
 
@@ -484,7 +500,7 @@ func instantiateArchivedClass(archClass *Class) (ArchivedObject, *Class) {
 
 // DecodeTypedValues decodes one typed value group.
 // lookahead may be a pre-read BeginTypedValues event or nil (will read from stream).
-func (u *Unarchiver) decodeTypedValuesWithLookahead(lookahead interface{}) (*TypedGroup, error) {
+func (u *unarchiver) decodeTypedValuesWithLookahead(lookahead interface{}) (*TypedGroup, error) {
 	var begin BeginTypedValues
 	if lookahead != nil {
 		btv, ok := lookahead.(BeginTypedValues)
@@ -528,12 +544,12 @@ func (u *Unarchiver) decodeTypedValuesWithLookahead(lookahead interface{}) (*Typ
 }
 
 // DecodeTypedValues decodes the next typed value group from the stream.
-func (u *Unarchiver) DecodeTypedValues() (*TypedGroup, error) {
+func (u *unarchiver) DecodeTypedValues() (*TypedGroup, error) {
 	return u.decodeTypedValuesWithLookahead(nil)
 }
 
 // DecodeValuesOfTypes decodes a typed value group that must have the given encodings.
-func (u *Unarchiver) DecodeValuesOfTypes(typeEncodings ...[]byte) ([]interface{}, error) {
+func (u *unarchiver) DecodeValuesOfTypes(typeEncodings ...[]byte) ([]interface{}, error) {
 	if len(typeEncodings) == 0 {
 		return nil, fmt.Errorf("DecodeValuesOfTypes: at least one type encoding required")
 	}
@@ -551,7 +567,7 @@ func (u *Unarchiver) DecodeValuesOfTypes(typeEncodings ...[]byte) ([]interface{}
 }
 
 // DecodeValueOfType decodes a single typed value of the given encoding.
-func (u *Unarchiver) DecodeValueOfType(typeEncoding []byte) (interface{}, error) {
+func (u *unarchiver) DecodeValueOfType(typeEncoding []byte) (interface{}, error) {
 	vals, err := u.DecodeValuesOfTypes(typeEncoding)
 	if err != nil {
 		return nil, err
@@ -560,7 +576,7 @@ func (u *Unarchiver) DecodeValueOfType(typeEncoding []byte) (interface{}, error)
 }
 
 // DecodeArray decodes a C array of elemType with given length.
-func (u *Unarchiver) DecodeArray(elemType []byte, length int) (*Array, error) {
+func (u *unarchiver) DecodeArray(elemType []byte, length int) (*Array, error) {
 	enc, err := buildArrayEncoding(length, elemType)
 	if err != nil {
 		return nil, err
@@ -577,7 +593,7 @@ func (u *Unarchiver) DecodeArray(elemType []byte, length int) (*Array, error) {
 }
 
 // DecodeDataObject decodes an NSData-style (length int32 + byte array).
-func (u *Unarchiver) DecodeDataObject() ([]byte, error) {
+func (u *unarchiver) DecodeDataObject() ([]byte, error) {
 	lenVal, err := u.DecodeValueOfType([]byte("i"))
 	if err != nil {
 		return nil, err
@@ -601,7 +617,7 @@ func (u *Unarchiver) DecodeDataObject() ([]byte, error) {
 }
 
 // DecodePropertyList decodes a legacy binary property list.
-func (u *Unarchiver) DecodePropertyList() (interface{}, error) {
+func (u *unarchiver) DecodePropertyList() (interface{}, error) {
 	data, err := u.DecodeDataObject()
 	if err != nil {
 		return nil, err
@@ -610,7 +626,7 @@ func (u *Unarchiver) DecodePropertyList() (interface{}, error) {
 }
 
 // DecodeAll decodes all top-level value groups in the stream.
-func (u *Unarchiver) DecodeAll() ([]*TypedGroup, error) {
+func (u *unarchiver) DecodeAll() ([]*TypedGroup, error) {
 	var groups []*TypedGroup
 	for {
 		ev, err := u.Reader.Next()
@@ -640,7 +656,7 @@ func UnarchiveFromData(data []byte) (interface{}, error) {
 }
 
 // DecodeSingleRoot decodes the single root value from the stream.
-func (u *Unarchiver) DecodeSingleRoot() (interface{}, error) {
+func (u *unarchiver) DecodeSingleRoot() (interface{}, error) {
 	groups, err := u.DecodeAll()
 	if err != nil {
 		return nil, err
