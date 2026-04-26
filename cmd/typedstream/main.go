@@ -12,7 +12,7 @@ import (
 	"os"
 	"strings"
 
-	ts "github.com/tagatac/typedstream-go"
+	ts "github.com/tagatac/go-typedstream"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/tagatac/typedstream-go
+module github.com/tagatac/go-typedstream
 
 go 1.23.0
 

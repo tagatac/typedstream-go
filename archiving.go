@@ -97,8 +97,8 @@ func NewTypedValue(enc []byte, val interface{}) *TypedValue {
 	return &TypedValue{TypedGroup: TypedGroup{Encodings: [][]byte{enc}, Values: []interface{}{val}}}
 }
 
-func (v *TypedValue) Encoding() []byte    { return v.Encodings[0] }
-func (v *TypedValue) Value() interface{}  { return v.Values[0] }
+func (v *TypedValue) Encoding() []byte   { return v.Encodings[0] }
+func (v *TypedValue) Value() interface{} { return v.Values[0] }
 func (v *TypedValue) FormatLines(seen map[uintptr]bool) []string {
 	return FormatValueWithPrefix(v.Values[0], fmt.Sprintf("type %s: ", bytesRepr(v.Encodings[0])), seen)
 }
@@ -184,7 +184,7 @@ type objTableEntry struct {
 
 // ---- Unarchiver ----
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mock_typedstream/mock_unarchiver.go -package=mock_typedstream github.com/tagatac/typedstream-go Unarchiver
+//go:generate go run go.uber.org/mock/mockgen -destination=mock_typedstream/mock_unarchiver.go -package=mock_typedstream github.com/tagatac/go-typedstream Unarchiver
 
 // Unarchiver decodes high-level objects from a TypedStreamReader.
 type Unarchiver interface {
